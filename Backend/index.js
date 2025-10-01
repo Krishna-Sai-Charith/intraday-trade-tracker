@@ -1,10 +1,14 @@
-// Backend/index.js
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import dotenv from 'dotenv';
 import mongoose from 'mongoose';
-import authRoutes from './routes/authRoutes.js'; // ← Must be correct path
+import authRoutes from './routes/authRoutes.js'; 
+import tradeRoutes from './routes/tradeRoutes.js';
+import { verifyToken } from './middleware/auth.js';
+
+
+
 
 dotenv.config();
 
@@ -21,7 +25,9 @@ mongoose.connect(process.env.MONGO_URI)
   .catch(err => console.error('❌ MongoDB connection error:', err));
 
 // ✅ Mount auth routes
-app.use('/auth', authRoutes); // ← This line must exist!
+app.use('/auth', authRoutes); 
+
+app.use('/trades', verifyToken, tradeRoutes); 
 
 app.get('/', (req, res) => {
   res.json({ message: 'Auth system ready ✅' });
