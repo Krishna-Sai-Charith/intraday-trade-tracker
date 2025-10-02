@@ -1,10 +1,11 @@
-import { Router } from 'express';
-import { createTrade } from '../controllers/tradeController.js';
+// backend/routes/tradeRoutes.js
+import express from 'express';
+import { createTrade, deleteTrade } from '../controllers/tradeController.js'; // ✅ both must be imported
 import { verifyToken } from '../middleware/auth.js';
 
-const router = Router();
+const router = express.Router();
 
-// POST /trades → only if logged in
 router.post('/', verifyToken, createTrade);
+router.delete('/:id', verifyToken, deleteTrade); // ✅ now deleteTrade is defined
 
 export default router;
