@@ -1,4 +1,3 @@
-// src/pages/Register.jsx
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -39,6 +38,7 @@ export default function Register() {
       const result = await res.json();
 
       if (res.ok) {
+        // Auto-login after register
         login(result.token);
         navigate('/dashboard');
       } else {
@@ -50,36 +50,48 @@ export default function Register() {
   };
 
   return (
-    <div className="auth-form">
-      <h2>Register</h2>
-      {error && <div className="alert alert-error">{error}</div>}
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-        <div className="form-group">
-          <label>Email</label>
-          <input
-            {...register('email')}
-            type="email"
-            placeholder="Email"
-            className="form-control"
-          />
-          {errors.email && <p style={{ color: '#ef4444', fontSize: '14px', marginTop: '4px' }}>{errors.email.message}</p>}
-        </div>
-        <div className="form-group">
-          <label>Password</label>
-          <input
-            {...register('password')}
-            type="password"
-            placeholder="Password"
-            className="form-control"
-          />
-          {errors.password && <p style={{ color: '#ef4444', fontSize: '14px', marginTop: '4px' }}>{errors.password.message}</p>}
-        </div>
-        <button type="submit" className="btn">Register</button>
-      </form>
-      <p className="mt-4">
-        Already have an account?{' '}
-        <a href="/login">Login</a>
-      </p>
+    <div className="auth-container">
+      <div className="auth-card">
+        <h2>Register</h2>
+        {error && <div className="alert alert-error">{error}</div>}
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <div className="form-group">
+            <label>Email</label>
+            <input
+              {...register('email')}
+              type="email"
+              placeholder="Email"
+              className="form-control"
+            />
+            {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email.message}</p>}
+          </div>
+          <div className="form-group">
+            <label>Password</label>
+            <input
+              {...register('password')}
+              type="password"
+              placeholder="Password"
+              className="form-control"
+            />
+            {errors.password && <p className="text-red-500 text-sm mt-1">{errors.password.message}</p>}
+          </div>
+          <button
+            type="submit"
+            className="btn"
+          >
+            Register
+          </button>
+        </form>
+        <p className="mt-4 text-center text-gray-700">
+          Already have an account?{' '}
+          <span
+            onClick={() => navigate('/login')}
+            className="text-blue-600 hover:underline cursor-pointer"
+          >
+            Login
+          </span>
+        </p>
+      </div>
     </div>
   );
 }
