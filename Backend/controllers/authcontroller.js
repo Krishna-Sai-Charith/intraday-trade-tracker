@@ -1,29 +1,22 @@
-// Backend/controllers/authController.js
+// backend/controllers/authController.js
 import User from '../models/user.js';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 
-// @desc    Register a new user
-// @route   POST /auth/register
-// @access  Public
 export const register = async (req, res) => {
   try {
     const { email, password } = req.body;
-    // In register function
     if (!/^\S+@\S+\.\S+$/.test(email)) {
-    return res.status(400).json({ message: 'Please enter a valid email' });
+      return res.status(400).json({ message: 'Please enter a valid email' });
     }
-    // Check if user exists
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return res.status(400).json({ message: 'User already exists' });
     }
 
-    // Hash password
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    // Create user
     const user = new User({
       email,
       password: hashedPassword
@@ -31,7 +24,6 @@ export const register = async (req, res) => {
 
     await user.save();
 
-    // Generate JWT (without sending password)
     const token = jwt.sign(
       { userId: user._id, email: user.email },
       process.env.JWT_SECRET || 'Hyphenated_gay_123',
@@ -52,26 +44,19 @@ export const register = async (req, res) => {
   }
 };
 
-// @desc    Login user
-// @route   POST /auth/login
-// @access  Public
 export const login = async (req, res) => {
   try {
     const { email, password } = req.body;
-
-    // Check if user exists
     const user = await User.findOne({ email });
     if (!user) {
       return res.status(400).json({ message: 'Invalid credentials' });
     }
 
-    // Check password
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       return res.status(400).json({ message: 'Invalid credentials' });
     }
 
-    // Generate JWT
     const token = jwt.sign(
       { userId: user._id, email: user.email },
       process.env.JWT_SECRET || 'your_jwt_secret_key',
@@ -88,6 +73,28 @@ export const login = async (req, res) => {
     });
   } catch (error) {
     console.error('Login error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+export const updateProfile = async (req, res) => {
+  try {
+    const { capital } = req.body;
+    const userId = req.user.userId;
+
+    const user = await User.findByIdAndUpdate(
+      userId,
+      { capital: parseFloat(capital) },
+      { new: true, runValidators: true }
+    );
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    res.json({ message: 'Profile updated', capital: user.capital });
+  } catch (error) {
+    console.error('Update profile error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 };

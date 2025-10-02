@@ -6,6 +6,7 @@ import mongoose from 'mongoose';
 import authRoutes from './routes/authRoutes.js'; 
 import tradeRoutes from './routes/tradeRoutes.js';
 import { verifyToken } from './middleware/auth.js';
+import userRoutes from './routes/userRoutes.js';
 
 
 
@@ -28,6 +29,8 @@ mongoose.connect(process.env.MONGO_URI)
 app.use('/auth', authRoutes); 
 
 app.use('/trades', verifyToken, tradeRoutes); 
+
+app.use('/api/user', userRoutes);
 
 app.get('/', (req, res) => {
   res.json({ message: 'Auth system ready ✅' });

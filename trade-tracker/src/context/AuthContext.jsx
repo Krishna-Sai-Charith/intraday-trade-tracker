@@ -14,15 +14,33 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (token) {
-      // Optional: decode token to get user info
-      setCurrentUser({ token });
+      // Decode token to get user info (optional but useful)
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        setCurrentUser({
+          token,
+          id: payload.userId,
+          email: payload.email
+        });
+      } catch (e) {
+        localStorage.removeItem('token');
+      }
     }
     setLoading(false);
   }, []);
 
   const login = (token) => {
-    localStorage.setItem('token', token);
-    setCurrentUser({ token });
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      setCurrentUser({
+        token,
+        id: payload.userId,
+        email: payload.email
+      });
+      localStorage.setItem('token', token);
+    } catch (e) {
+      console.error('Invalid token');
+    }
   };
 
   const logout = () => {
