@@ -1,4 +1,4 @@
-// Backend/models/User.js
+// models/User.js
 import { Schema, model } from 'mongoose';
 
 const tradeSchema = new Schema({
@@ -6,7 +6,13 @@ const tradeSchema = new Schema({
   entryPrice: { type: Number, required: true },
   exitPrice: { type: Number, required: true },
   quantity: { type: Number, required: true },
+  tradeType: { 
+    type: String, 
+    enum: ['BUY', 'SELL'], 
+    required: true 
+  },
   notes: { type: String },
+  profitLoss: { type: Number, required: true },
   date: { type: Date, default: Date.now }
 });
 
@@ -16,7 +22,7 @@ const userSchema = new Schema({
     required: true,
     unique: true,
     lowercase: true,
-    match: [/^\S+@\S+\.\S+$/, 'Please enter a valid email'] // ✅ Email regex validation
+    match: [/^\S+@\S+\.\S+$/, 'Please enter a valid email']
   },
   password: { type: String, required: true },
   trades: [tradeSchema],

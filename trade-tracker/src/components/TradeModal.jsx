@@ -1,3 +1,4 @@
+// components/TradeModal.jsx
 import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -31,7 +32,7 @@ export default function TradeModal({ onClose, onSaved }) {
       entryPrice: '',
       exitPrice: '',
       quantity: '',
-      tradeType: '',
+      tradeType: 'BUY',
       notes: ''
     }
   });
@@ -41,13 +42,17 @@ export default function TradeModal({ onClose, onSaved }) {
   const qty = watch('quantity');
   const tradeType = watch('tradeType');
 
+  // Calculate P&L preview based on trade type
   useEffect(() => {
-    let calcPL = 0;
+    const entryVal = parseFloat(entry) || 0;
+    const exitVal = parseFloat(exit) || 0;
+    const qtyVal = parseInt(qty) || 0;
 
+    let calcPL = 0;
     if (tradeType === 'BUY') {
-      calcPL = (exit - entry) * qty;
+      calcPL = (exitVal - entryVal) * qtyVal;
     } else if (tradeType === 'SELL') {
-      calcPL = (entry - exit) * qty;
+      calcPL = (entryVal - exitVal) * qtyVal;
     }
 
     setProfitLoss(isNaN(calcPL) ? 0 : calcPL);
@@ -74,7 +79,7 @@ export default function TradeModal({ onClose, onSaved }) {
           entryPrice: '',
           exitPrice: '',
           quantity: '',
-          tradeType: '',
+          tradeType: 'BUY',
           notes: ''
         });
         setProfitLoss(0);
@@ -91,7 +96,6 @@ export default function TradeModal({ onClose, onSaved }) {
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal" onClick={(e) => e.stopPropagation()}>
-        {/* Close button top-right */}
         <button 
           onClick={onClose}
           className="close-btn top-right"
@@ -148,9 +152,8 @@ export default function TradeModal({ onClose, onSaved }) {
           <div className="form-group">
             <label>Trade Type</label>
             <select {...register('tradeType')} className="form-control">
-              <option value="">Select</option>
-              <option value="BUY">BUY</option>
-              <option value="SELL">SELL</option>
+              <option value="BUY">BUY (Long)</option>
+              <option value="SELL">SELL (Short)</option>
             </select>
             {errors.tradeType && <p className="text-red-500 text-sm mt-1">{errors.tradeType.message}</p>}
           </div>
