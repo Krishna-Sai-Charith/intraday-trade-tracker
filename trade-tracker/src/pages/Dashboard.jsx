@@ -1,6 +1,8 @@
 // src/pages/Dashboard.jsx
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import TradeForm from '../components/TradeForm';
+import '../index.css';
 
 export default function Dashboard() {
   const { logout } = useAuth();
@@ -12,15 +14,13 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="max-w-md mx-auto p-6 bg-white rounded-lg shadow mt-10">
-      <h2 className="text-2xl font-bold text-gray-800 mb-4">Dashboard</h2>
-      <p className="mb-6">Welcome! You're logged in.</p>
-      <button
-        onClick={handleLogout}
-        className="bg-red-600 text-white py-2 px-4 rounded hover:bg-red-700"
-      >
-        Logout
-      </button>
+    <div className="container">
+      <div className="header">
+        <h1>Dashboard</h1>
+        <a href="#" onClick={handleLogout} className="logout-link">Logout</a>
+      </div>
+
+      <TradeForm />
     </div>
   );
 }

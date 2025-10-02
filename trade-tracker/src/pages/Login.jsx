@@ -5,6 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import '../index.css';
 
 const loginSchema = z.object({
   email: z.string().email('Invalid email'),
@@ -46,43 +47,35 @@ export default function Login() {
   };
 
   return (
-    <div className="max-w-md mx-auto p-6 bg-white rounded-lg shadow mt-10">
-      <h2 className="text-2xl font-bold text-gray-800 mb-6">Login</h2>
-      {error && <p className="text-red-500 mb-4">{error}</p>}
+    <div className="auth-form">
+      <h2>Login</h2>
+      {error && <div className="alert alert-error">{error}</div>}
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-        <div>
+        <div className="form-group">
+          <label>Email</label>
           <input
             {...register('email')}
             type="email"
             placeholder="Email"
-            className="w-full p-3 border border-gray-300 rounded"
+            className="form-control"
           />
-          {errors.email && <p className="text-red-500 text-sm">{errors.email.message}</p>}
+          {errors.email && <p style={{ color: '#ef4444', fontSize: '14px', marginTop: '4px' }}>{errors.email.message}</p>}
         </div>
-        <div>
+        <div className="form-group">
+          <label>Password</label>
           <input
             {...register('password')}
             type="password"
             placeholder="Password"
-            className="w-full p-3 border border-gray-300 rounded"
+            className="form-control"
           />
-          {errors.password && <p className="text-red-500 text-sm">{errors.password.message}</p>}
+          {errors.password && <p style={{ color: '#ef4444', fontSize: '14px', marginTop: '4px' }}>{errors.password.message}</p>}
         </div>
-        <button
-          type="submit"
-          className="w-full bg-blue-600 text-white py-3 rounded font-medium hover:bg-blue-700"
-        >
-          Login
-        </button>
+        <button type="submit" className="btn">Login</button>
       </form>
-      <p className="mt-4 text-center">
+      <p className="mt-4">
         Don't have an account?{' '}
-        <button
-          onClick={() => navigate('/register')}
-          className="text-blue-600 hover:underline"
-        >
-          Register
-        </button>
+        <a href="/register">Register</a>
       </p>
     </div>
   );
