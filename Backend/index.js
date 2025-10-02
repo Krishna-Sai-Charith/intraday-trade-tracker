@@ -32,6 +32,8 @@ app.use('/trades', verifyToken, tradeRoutes);
 
 app.use('/api/user', userRoutes);
 
+app.use('/api/trades', tradeRoutes);
+
 app.get('/', (req, res) => {
   res.json({ message: 'Auth system ready ✅' });
 });

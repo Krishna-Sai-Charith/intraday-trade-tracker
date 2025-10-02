@@ -24,24 +24,24 @@ export default function Navbar({ onAddTrade, onManageCapital, capital, totalPnL 
       </div>
 
       <div className="actions">
-        <button
-          onClick={() => navigate('/profile')}
-          className="nav-btn"
-        >
-          Profile
-        </button>
-        <button
+        <span
+            onClick={() => navigate('/profile')}
+            className="text-blue-600 cursor-pointer"
+          >
+            Profile
+          </span>
+        <span
           onClick={onManageCapital}
-          className="nav-btn"
+          className="text-blue-600 cursor-pointer"
         >
           Capital
-        </button>
-        <button
+        </span>
+        <span
           onClick={handleLogout}
-          className="nav-btn"
+          className="text-red-500 cursor-pointer"
         >
           Logout
-        </button>
+        </span>
         <button
           onClick={onAddTrade}
           className="add-btn"

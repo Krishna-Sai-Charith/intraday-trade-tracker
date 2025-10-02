@@ -64,3 +64,35 @@ export const createTrade = async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 };
+// backend/controllers/tradeController.js
+export const deleteTrade = async (req, res) => {
+  try {
+    const { id } = req.params;
+    // 🔥 FIX: Use req.user.userId, not req.user.id
+    const userId = req.user.userId; // ✅ Correct field from JWT
+
+    if (!userId) {
+      return res.status(400).json({ message: 'User ID missing in token' });
+    }
+
+    const user = await User.findById(userId); // ✅ Now this works
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    console.log('Deleting trade with ID:', id);
+
+    const tradeExists = user.trades.some(trade => trade._id.toString() === id);
+    if (!tradeExists) {
+      return res.status(404).json({ message: 'Trade not found' });
+    }
+
+    user.trades = user.trades.filter(trade => trade._id.toString() !== id);
+    await user.save();
+    res.json({ message: 'Trade deleted successfully' });
+
+  } catch (err) {
+    console.error('Delete error:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+};

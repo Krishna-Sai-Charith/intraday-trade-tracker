@@ -9,7 +9,7 @@ router.post('/register', register);
 router.post('/login', login);
 router.get('/profile', verifyToken, async (req, res) => {
   try {
-    const user = await (await import('../models/user.js')).default.findById(req.user.userId).select('-password');
+    const user = await (await import('../models/User.js')).default.findById(req.user.userId).select('-password');
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }

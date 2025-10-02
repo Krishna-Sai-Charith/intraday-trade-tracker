@@ -1,5 +1,7 @@
 // models/User.js
-import { Schema, model } from 'mongoose';
+import mongoose from 'mongoose';
+
+const { Schema, model, models } = mongoose;
 
 const tradeSchema = new Schema({
   stock: { type: String, required: true },
@@ -9,10 +11,10 @@ const tradeSchema = new Schema({
   tradeType: { 
     type: String, 
     enum: ['BUY', 'SELL'], 
-    required: true 
+    required: false
   },
   notes: { type: String },
-  profitLoss: { type: Number, required: true },
+  profitLoss: { type: Number, required: false },
   date: { type: Date, default: Date.now }
 });
 
@@ -32,4 +34,7 @@ const userSchema = new Schema({
   timestamps: true
 });
 
-export default model('User', userSchema);
+// ✅ Safely export the model
+const User = models.User || model('User', userSchema);
+
+export default User;

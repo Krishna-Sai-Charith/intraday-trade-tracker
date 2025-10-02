@@ -1,7 +1,7 @@
 // backend/routes/userRoutes.js
 import { Router } from 'express';
 import { verifyToken } from '../middleware/auth.js';
-import User from '../models/user.js';
+import User from '../models/User.js';
 
 const router = Router();
 
