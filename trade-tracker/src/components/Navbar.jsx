@@ -14,7 +14,7 @@ export default function Navbar({ onAddTrade, onManageCapital, capital, totalPnL 
 
   return (
     <div className="navbar">
-      <div className="title">Intraday Trader Tracker</div>
+      <div className="title">Intraday Trade Tracker</div>
 
       <div className="stats">
         <span className="cap">Cap: ₹{capital?.toFixed(2) || '0.00'}</span>

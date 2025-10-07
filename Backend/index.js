@@ -7,7 +7,7 @@ import authRoutes from './routes/authRoutes.js';
 import tradeRoutes from './routes/tradeRoutes.js';
 import { verifyToken } from './middleware/auth.js';
 import userRoutes from './routes/userRoutes.js';
-
+import ocrRoutes from './routes/ocrRoutes.js';
 
 
 
@@ -33,6 +33,8 @@ app.use('/trades', verifyToken, tradeRoutes);
 app.use('/api/user', userRoutes);
 
 app.use('/api/trades', tradeRoutes);
+
+app.use('/api/ocr', ocrRoutes);
 
 app.get('/', (req, res) => {
   res.json({ message: 'Auth system ready ✅' });
