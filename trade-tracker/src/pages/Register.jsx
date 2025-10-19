@@ -7,10 +7,12 @@ import { useNavigate } from 'react-router-dom';
 import '../index.css';
 
 const registerSchema = z.object({
-  email: z.string().email('Invalid email address'),
-  password: z.string()
-    .min(6, 'Password must be at least 6 characters')
-    .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/, 'Password must contain at least one uppercase letter, one lowercase letter, and one number')
+  email: z.string().email('Invalid email'),
+  password: z.string().min(6, 'Password must be at least 6 characters'),
+  confirmPassword: z.string()
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "Passwords don't match",
+  path: ["confirmPassword"]
 });
 
 export default function Register() {
@@ -27,25 +29,26 @@ export default function Register() {
   });
 
   const onSubmit = async (data) => {
-    setError('');
     try {
       const res = await fetch('http://localhost:5000/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data)
+        body: JSON.stringify({
+          email: data.email,
+          password: data.password
+        })
       });
 
       const result = await res.json();
 
       if (res.ok) {
-        // Auto-login after register
         login(result.token);
         navigate('/dashboard');
       } else {
         setError(result.message || 'Registration failed');
       }
     } catch (err) {
-      setError('Network error. Please check if backend is running.');
+      setError('Network error');
     }
   };
 
@@ -54,40 +57,58 @@ export default function Register() {
       <div className="auth-card">
         <h2>Register</h2>
         {error && <div className="alert alert-error">{error}</div>}
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        
+        <form onSubmit={handleSubmit(onSubmit)} className="form">
           <div className="form-group">
             <label>Email</label>
             <input
               {...register('email')}
               type="email"
               placeholder="Email"
-              className="form-control"
             />
-            {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email.message}</p>}
+            {errors.email && (
+              <p className="text-red-500 text-sm" style={{ marginTop: '6px' }}>
+                {errors.email.message}
+              </p>
+            )}
           </div>
+
           <div className="form-group">
             <label>Password</label>
             <input
               {...register('password')}
               type="password"
               placeholder="Password"
-              className="form-control"
             />
-            {errors.password && <p className="text-red-500 text-sm mt-1">{errors.password.message}</p>}
+            {errors.password && (
+              <p className="text-red-500 text-sm" style={{ marginTop: '6px' }}>
+                {errors.password.message}
+              </p>
+            )}
           </div>
-          <button
-            type="submit"
-            className="btn"
-          >
+
+          <div className="form-group">
+            <label>Confirm Password</label>
+            <input
+              {...register('confirmPassword')}
+              type="password"
+              placeholder="Confirm Password"
+            />
+            {errors.confirmPassword && (
+              <p className="text-red-500 text-sm" style={{ marginTop: '6px' }}>
+                {errors.confirmPassword.message}
+              </p>
+            )}
+          </div>
+
+          <button type="submit" className="btn">
             Register
           </button>
         </form>
-        <p className="mt-4 text-center text-gray-700">
+
+        <p className="link-text">
           Already have an account?{' '}
-          <span
-            onClick={() => navigate('/login')}
-            className="text-blue-600 hover:underline cursor-pointer"
-          >
+          <span onClick={() => navigate('/login')} className="link">
             Login
           </span>
         </p>

@@ -50,40 +50,44 @@ export default function Login() {
       <div className="auth-card">
         <h2>Login</h2>
         {error && <div className="alert alert-error">{error}</div>}
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        
+        <form onSubmit={handleSubmit(onSubmit)} className="form">
           <div className="form-group">
             <label>Email</label>
             <input
               {...register('email')}
               type="email"
               placeholder="Email"
-              className="form-control"
             />
-            {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email.message}</p>}
+            {errors.email && (
+              <p className="text-red-500 text-sm" style={{ marginTop: '6px' }}>
+                {errors.email.message}
+              </p>
+            )}
           </div>
+
           <div className="form-group">
             <label>Password</label>
             <input
               {...register('password')}
               type="password"
               placeholder="Password"
-              className="form-control"
             />
-            {errors.password && <p className="text-red-500 text-sm mt-1">{errors.password.message}</p>}
+            {errors.password && (
+              <p className="text-red-500 text-sm" style={{ marginTop: '6px' }}>
+                {errors.password.message}
+              </p>
+            )}
           </div>
-          <button
-            type="submit"
-            className="btn"
-          >
+
+          <button type="submit" className="btn">
             Login
           </button>
         </form>
-        <p className="mt-4 text-center text-gray-700">
+
+        <p className="link-text">
           Don't have an account?{' '}
-          <span
-            onClick={() => navigate('/register')}
-            className="text-blue-600 hover:underline cursor-pointer"
-          >
+          <span onClick={() => navigate('/register')} className="link">
             Register
           </span>
         </p>

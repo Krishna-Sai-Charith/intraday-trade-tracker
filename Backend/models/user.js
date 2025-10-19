@@ -14,6 +14,11 @@ const tradeSchema = new Schema({
     required: false
   },
   notes: { type: String },
+  emotion: { 
+    type: String, 
+    enum: ['calm', 'anxious', 'greedy', 'fomo', 'focused'],
+    required: false 
+  },  // 👈 NEW
   profitLoss: { type: Number, required: false },
   date: { type: Date, default: Date.now }
 });
