@@ -1,16 +1,19 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useAuth } from '../context/AuthContext';
 
 const capitalSchema = z.object({
   amount: z.number().positive('Amount must be > 0'),
-  action: z.enum(['ADD', 'REMOVE'], { errorMap: () => ({ message: 'Must be ADD or REMOVE' }) })
+  action: z.enum(['ADD', 'REMOVE'])
 });
 
-export default function CapitalModal({ onClose, onSaved, currentCapital }) {
-  const { currentUser } = useAuth();
+export default function CapitalModal({ 
+  onClose, 
+  onSaved, 
+  currentCapital,
+  defaultAction = 'ADD' // 👈 accept prop
+}) {
   const [submitting, setSubmitting] = useState(false);
 
   const {
@@ -22,15 +25,13 @@ export default function CapitalModal({ onClose, onSaved, currentCapital }) {
     resolver: zodResolver(capitalSchema),
     defaultValues: {
       amount: '',
-      action: 'ADD'
+      action: defaultAction
     }
   });
 
   const onSubmit = async (data) => {
     setSubmitting(true);
     try {
-      // In real app, this would call /user/profile PATCH
-      // For now, simulate update
       const newCapital = data.action === 'ADD' 
         ? currentCapital + data.amount 
         : currentCapital - data.amount;
@@ -38,10 +39,10 @@ export default function CapitalModal({ onClose, onSaved, currentCapital }) {
       onSaved(newCapital);
       reset({
         amount: '',
-        action: 'ADD'
+        action: defaultAction
       });
     } catch (err) {
-      onSaved(null, false, 'Network error. Is backend running?');
+      onSaved(null);
     } finally {
       setSubmitting(false);
     }
@@ -50,14 +51,13 @@ export default function CapitalModal({ onClose, onSaved, currentCapital }) {
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal" onClick={(e) => e.stopPropagation()}>
-        {/* Close button top-right */}
         <button 
           onClick={onClose}
           className="close-btn top-right"
         >
           ✕
         </button>
-        <h2>Manage Capital</h2>
+        <h2>{defaultAction === 'ADD' ? 'Deposit Capital' : 'Withdraw Capital'}</h2>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="form-group">
             <label>Current Capital: ₹{currentCapital?.toFixed(2)}</label>
@@ -75,21 +75,15 @@ export default function CapitalModal({ onClose, onSaved, currentCapital }) {
             {errors.amount && <p className="text-red-500 text-sm mt-1">{errors.amount.message}</p>}
           </div>
 
-          <div className="form-group">
-            <label>Action</label>
-            <select {...register('action')} className="form-control">
-              <option value="ADD">Add Capital</option>
-              <option value="REMOVE">Remove Capital</option>
-            </select>
-            {errors.action && <p className="text-red-500 text-sm mt-1">{errors.action.message}</p>}
-          </div>
+          {/* Hidden input — no dropdown */}
+          <input type="hidden" {...register('action')} value={defaultAction} />
 
           <button
             type="submit"
             disabled={submitting}
             className="btn"
           >
-            {submitting ? 'Saving...' : 'Update Capital'}
+            {submitting ? 'Saving...' : (defaultAction === 'ADD' ? 'Deposit' : 'Withdraw')}
           </button>
         </form>
       </div>

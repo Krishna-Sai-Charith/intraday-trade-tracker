@@ -1,20 +1,30 @@
-// src/pages/Dashboard.jsx
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import Navbar from '../components/Navbar';
-import TradeModal from '../components/TradeModal';
+import FastTradeModal from '../components/FastTradeModal';
 import CapitalModal from '../components/CapitalModal';
+import TradeDetailModal from '../components/TradeDetailModal';
 import '../index.css';
 
-export default function Dashboard() {
+export default function CompleteDashboard() {
   const { currentUser } = useAuth();
   const [showTradeModal, setShowTradeModal] = useState(false);
   const [showCapitalModal, setShowCapitalModal] = useState(false);
+  const [capitalAction, setCapitalAction] = useState('ADD');
+  const [selectedTrade, setSelectedTrade] = useState(null);
   const [toast, setToast] = useState({ show: false, message: '', success: true });
   const [capital, setCapital] = useState(0);
   const [totalPnL, setTotalPnL] = useState(0);
   const [trades, setTrades] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  // Gamification stats
+  const [stats, setStats] = useState({
+    winStreak: 0,
+    totalWins: 0,
+    totalLosses: 0,
+    winRate: 0
+  });
 
   const API_BASE = 'http://localhost:5000';
 
@@ -26,9 +36,7 @@ export default function Dashboard() {
 
     try {
       const res = await fetch(`${API_BASE}/api/user/profile`, {
-        headers: {
-          'Authorization': `Bearer ${currentUser.token}`
-        }
+        headers: { 'Authorization': `Bearer ${currentUser.token}` }
       });
 
       if (res.ok) {
@@ -37,6 +45,7 @@ export default function Dashboard() {
         setCapital(userData.capital || 0);
         const total = (userData.trades || []).reduce((sum, t) => sum + (t.profitLoss || 0), 0);
         setTotalPnL(total);
+        calculateStats(userData.trades || []);
       }
     } catch (err) {
       console.error('🌐 Network error:', err);
@@ -49,14 +58,41 @@ export default function Dashboard() {
     fetchUserData();
   }, [currentUser]);
 
+  const calculateStats = (tradesData) => {
+    const wins = tradesData.filter(t => t.profitLoss > 0);
+    const losses = tradesData.filter(t => t.profitLoss < 0);
+    
+    // Calculate win streak
+    let currentStreak = 0;
+    for (let i = tradesData.length - 1; i >= 0; i--) {
+      if (tradesData[i].profitLoss > 0) {
+        currentStreak++;
+      } else {
+        break;
+      }
+    }
+
+    const winRate = tradesData.length > 0 
+      ? ((wins.length / tradesData.length) * 100).toFixed(1)
+      : 0;
+
+    setStats({
+      winStreak: currentStreak,
+      totalWins: wins.length,
+      totalLosses: losses.length,
+      winRate
+    });
+  };
+
   const handleTradeSaved = (trade) => {
     if (!trade) return;
     const newTrades = [...trades, trade];
     setTrades(newTrades);
     setTotalPnL(newTrades.reduce((sum, t) => sum + (t.profitLoss || 0), 0));
-    setToast({ show: true, message: '✅ Trade saved!', success: true });
+    calculateStats(newTrades);
+    setToast({ show: true, message: '✅ Trade saved successfully!', success: true });
     setShowTradeModal(false);
-    setTimeout(() => setToast({ show: false, message: '', success: true }), 2500);
+    setTimeout(() => setToast({ show: false, message: '', success: true }), 3000);
   };
 
   const handleDeleteTrade = async (tradeId) => {
@@ -65,16 +101,15 @@ export default function Dashboard() {
     try {
       const res = await fetch(`${API_BASE}/api/trades/${tradeId}`, {
         method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${currentUser.token}`
-        }
+        headers: { 'Authorization': `Bearer ${currentUser.token}` }
       });
 
       if (res.ok) {
         const updatedTrades = trades.filter(t => t._id !== tradeId);
         setTrades(updatedTrades);
         setTotalPnL(updatedTrades.reduce((sum, t) => sum + (t.profitLoss || 0), 0));
-        setToast({ show: true, message: '🗑️ Trade deleted!', success: true });
+        calculateStats(updatedTrades);
+        setToast({ show: true, message: '🗑️ Trade deleted successfully!', success: true });
       } else {
         setToast({ show: true, message: '❌ Failed to delete trade', success: false });
       }
@@ -82,7 +117,7 @@ export default function Dashboard() {
       console.error('Delete error:', err);
       setToast({ show: true, message: '🌐 Network error', success: false });
     }
-    setTimeout(() => setToast({ show: false, message: '', success: true }), 2500);
+    setTimeout(() => setToast({ show: false, message: '', success: true }), 3000);
   };
 
   const handleCapitalSaved = async (newCapital) => {
@@ -98,71 +133,227 @@ export default function Dashboard() {
 
       if (res.ok) {
         setCapital(newCapital);
-        setToast({ show: true, message: '✅ Capital updated!', success: true });
+        setToast({ 
+          show: true, 
+          message: capitalAction === 'ADD' ? '✅ Deposit successful!' : '✅ Withdrawal successful!', 
+          success: true 
+        });
       }
     } catch (err) {
       console.error('Capital update error:', err);
+      setToast({ show: true, message: '❌ Failed to update capital', success: false });
     }
     setShowCapitalModal(false);
-    setTimeout(() => setToast({ show: false, message: '', success: true }), 2500);
+    setTimeout(() => setToast({ show: false, message: '', success: true }), 3000);
   };
 
   if (loading) {
     return (
-      <div className="container" style={{ textAlign: 'center', padding: '50px' }}>
-        Loading your portfolio...
+      <div className="container" style={{ 
+        textAlign: 'center', 
+        padding: '100px 20px',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        gap: '16px'
+      }}>
+        <div style={{
+          width: '48px',
+          height: '48px',
+          border: '4px solid #2a2a2a',
+          borderTop: '4px solid #10b981',
+          borderRadius: '50%',
+          animation: 'spin 1s linear infinite'
+        }}></div>
+        <p style={{ color: '#9ca3af', fontSize: '15px' }}>Loading your portfolio...</p>
+        <style>{`
+          @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+          }
+        `}</style>
       </div>
     );
   }
 
   return (
     <div className="container">
-      <Navbar 
-        onAddTrade={() => setShowTradeModal(true)} 
-        onManageCapital={() => setShowCapitalModal(true)}
-        capital={capital}
-        totalPnL={totalPnL}
-      />
+      <Navbar />
 
-      <div className="trades-section">
-        <h2 style={{ fontSize: '18px', fontWeight: '700', marginBottom: '16px' }}>Recent Trades</h2>
-        {trades.length === 0 ? (
-          <p style={{ color: '#64748b', textAlign: 'center' }}>No trades recorded yet</p>
-        ) : (
-          trades.map((t) => (
-            <div key={t._id} className="trade-card">
-              {/* Delete button */}
-             <button
-  className="delete-trade-btn"
-  onClick={(e) => {
-    e.stopPropagation();
-    handleDeleteTrade(t._id);
-  }}
-  title="Delete trade"
->
-  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <polyline points="3 6 5 6 21 6"></polyline>
-    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-  </svg>
-</button>
+      {/* Main Content Grid */}
+      <div className="dashboard-grid-compact">
+        {/* Left Side - Trades Table */}
+        <div className="trades-section-compact">
+          <div className="section-header-compact">
+            <h2 className="section-title-compact">Trade History</h2>
+            <button
+              onClick={() => setShowTradeModal(true)}
+              className="add-btn-compact"
+              title="Add new trade"
+            >
+              +
+            </button>
+          </div>
 
-              {/* Trade content */}
-              <span
-                className="trade-content"
-                onClick={() => alert(JSON.stringify(t, null, 2))}
-              >
-                <span className="stock">{t.stock || 'Unknown'}</span>
-                <span className={`pnl ${(t.profitLoss ?? 0) >= 0 ? 'positive' : 'negative'}`}>
-                  ₹{(t.profitLoss ?? 0).toFixed(2)}
-                </span>
-              </span>
+          {/* Trades Table */}
+          {trades.length === 0 ? (
+            <div className="no-trades-compact">
+              <div style={{ fontSize: '36px', marginBottom: '12px', opacity: 0.3 }}>📊</div>
+              <p style={{ fontSize: '14px', color: '#6b7280' }}>No trades yet</p>
+              <p style={{ fontSize: '12px', color: '#4b5563', marginTop: '4px' }}>
+                Click + to add your first trade
+              </p>
             </div>
-          ))
-        )}
+          ) : (
+            <div className="table-wrapper-compact">
+              <table className="trades-table-compact">
+                <thead>
+                  <tr>
+                    <th>Stock</th>
+                    <th>Type</th>
+                    <th>Qty</th>
+                    <th>Entry</th>
+                    <th>Exit</th>
+                    <th>P/L</th>
+                    <th>%</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {trades.slice().reverse().map((t) => {
+                    const percentChange = ((t.profitLoss / (t.entryPrice * t.quantity)) * 100).toFixed(2);
+                    const isProfitable = t.profitLoss >= 0;
+                    
+                    return (
+                      <tr 
+                        key={t._id}
+                        onClick={() => setSelectedTrade(t)}
+                        className="trade-row-compact"
+                      >
+                        <td className="stock-cell">
+                          <div className="stock-name">{t.stock || 'N/A'}</div>
+                        </td>
+                        <td>
+                          <span className={`trade-type-badge ${t.tradeType === 'BUY' ? 'long' : 'short'}`}>
+                            {t.tradeType === 'BUY' ? 'LONG' : 'SHORT'}
+                          </span>
+                        </td>
+                        <td className="qty-cell">{t.quantity || 0}</td>
+                        <td className="price-cell">₹{(t.entryPrice || 0).toFixed(2)}</td>
+                        <td className="price-cell">₹{(t.exitPrice || 0).toFixed(2)}</td>
+                        <td className={`pnl-cell ${isProfitable ? 'positive' : 'negative'}`}>
+                          {isProfitable ? '+' : ''}₹{(t.profitLoss || 0).toFixed(2)}
+                        </td>
+                        <td className={`percent-cell ${isProfitable ? 'positive' : 'negative'}`}>
+                          {isProfitable ? '+' : ''}{percentChange}%
+                        </td>
+                        <td className="action-cell">
+                          <button
+                            className="delete-btn-compact"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (window.confirm('Delete this trade?')) {
+                                handleDeleteTrade(t._id);
+                              }
+                            }}
+                            title="Delete"
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <polyline points="3 6 5 6 21 6"></polyline>
+                              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                            </svg>
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {/* Placeholder for Future Charts */}
+          <div className="future-section-placeholder">
+            <p style={{ fontSize: '12px', color: '#4b5563', textAlign: 'center' }}>
+              📊 Charts coming soon
+            </p>
+          </div>
+        </div>
+
+        {/* Right Side - Compact Wallet */}
+        <div className="wallet-section-compact">
+          <h3 className="wallet-title-compact">Wallet</h3>
+          
+          <div className="balance-display-compact">
+            <div className="balance-label-compact">Total Balance</div>
+            <div className="balance-amount-compact">
+              ₹{capital.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </div>
+            <div className={`pnl-display-compact ${totalPnL >= 0 ? 'positive' : 'negative'}`}>
+              {totalPnL >= 0 ? '+' : ''}₹{Math.abs(totalPnL).toFixed(2)}
+            </div>
+          </div>
+
+          <div className="wallet-actions-compact">
+            <button 
+              onClick={() => {
+                setCapitalAction('ADD');
+                setShowCapitalModal(true);
+              }} 
+              className="wallet-btn-compact deposit"
+            >
+              Deposit
+            </button>
+            <button 
+              onClick={() => {
+                setCapitalAction('REMOVE');
+                setShowCapitalModal(true);
+              }} 
+              className="wallet-btn-compact withdraw"
+            >
+              Withdraw
+            </button>
+          </div>
+
+          {/* Quick Stats */}
+          {trades.length > 0 && (
+            <div className="quick-stats-compact">
+              <div className="stat-item-compact">
+                <span className="stat-label-compact">Total Trades</span>
+                <span className="stat-value-compact">{trades.length}</span>
+              </div>
+              <div className="stat-item-compact">
+                <span className="stat-label-compact">Win Rate</span>
+                <span className={`stat-value-compact ${stats.winRate >= 50 ? 'positive' : 'negative'}`}>
+                  {stats.winRate}%
+                </span>
+              </div>
+              <div className="stat-item-compact">
+                <span className="stat-label-compact">Win Streak</span>
+                <span className="stat-value-compact">{stats.winStreak}</span>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
+      {/* Placeholder for Future Sections */}
+      <div className="future-sections-placeholder">
+        <div style={{ 
+          padding: '24px', 
+          border: '1px dashed #2a2a2a', 
+          borderRadius: '12px',
+          textAlign: 'center',
+          color: '#4b5563',
+          fontSize: '13px'
+        }}>
+          📓 Journal & Strategy • 🏆 Badge Hall • 📅 Calendar Heatmap (Coming Soon)
+        </div>
+      </div>
+
+      {/* Modals */}
       {showTradeModal && (
-        <TradeModal 
+        <FastTradeModal 
           onClose={() => setShowTradeModal(false)} 
           onSaved={handleTradeSaved}
         />
@@ -173,9 +364,19 @@ export default function Dashboard() {
           onClose={() => setShowCapitalModal(false)} 
           onSaved={handleCapitalSaved}
           currentCapital={capital}
+          defaultAction={capitalAction}
         />
       )}
 
+      {selectedTrade && (
+        <TradeDetailModal
+          trade={selectedTrade}
+          capital={capital}
+          onClose={() => setSelectedTrade(null)}
+        />
+      )}
+
+      {/* Toast Notification */}
       {toast.show && (
         <div className={`toast ${toast.success ? 'success' : 'error'}`}>
           {toast.message}
