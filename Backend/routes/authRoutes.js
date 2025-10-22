@@ -1,12 +1,15 @@
 // backend/routes/authRoutes.js
 import { Router } from 'express';
-import { register, login, updateProfile } from '../controllers/authController.js';
+import { register, login, updateProfile, forgotPassword, resetPassword } from '../controllers/authcontroller.js';
 import { verifyToken } from '../middleware/auth.js';
 
 const router = Router();
 
 router.post('/register', register);
 router.post('/login', login);
+router.post('/forgot-password', forgotPassword);
+router.post('/reset-password', resetPassword);
+
 router.get('/profile', verifyToken, async (req, res) => {
   try {
     const user = await (await import('../models/User.js')).default.findById(req.user.userId).select('-password');

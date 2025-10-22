@@ -926,6 +926,86 @@ input[type="file"]::file-selector-button:hover {
   background: rgba(239, 68, 68, 0.1);
 }
 
+/* ========================================
+   MOBILE: Show Active Month Only
+   ======================================== */
+
+@media (max-width: 768px) {
+  .calendar-heatmap-container {
+    padding: 16px;
+  }
+
+  .calendar-title {
+    font-size: 14px;
+  }
+
+  .year-selector {
+    gap: 8px;
+  }
+
+  .year-nav-btn {
+    width: 28px;
+    height: 28px;
+    font-size: 12px;
+  }
+
+  .year-display {
+    font-size: 14px;
+    min-width: 45px;
+  }
+
+  /* Show only current month on mobile */
+  .heatmap-wrapper {
+    overflow-x: scroll;
+    padding: 12px;
+  }
+
+  .heatmap-grid {
+    /* Calendar naturally scrolls - no change needed */
+    /* User can swipe to see other months */
+  }
+
+  .month-labels {
+    margin-left: 20px;
+  }
+
+  .month-label {
+    font-size: 9px;
+    min-width: 20px;
+  }
+
+  .day-labels {
+    font-size: 9px;
+    left: 0;
+    top: 34px;
+  }
+
+  .heatmap-day {
+    width: 9px;
+    height: 9px;
+  }
+
+  .heatmap-legend {
+    gap: 4px;
+    margin-top: 12px;
+  }
+
+  .legend-label {
+    font-size: 10px;
+  }
+
+  .legend-square {
+    width: 9px;
+    height: 9px;
+  }
+
+  .heatmap-summary {
+    font-size: 11px;
+    margin-top: 10px;
+    padding-top: 10px;
+  }
+}
+
 /* === RESPONSIVE === */
 @media (max-width: 1024px) {
   .dashboard-grid-compact {
@@ -1148,4 +1228,458 @@ html {
 
 .loading {
   animation: spin 1s linear infinite;
+}
+/* ========================================
+   CALENDAR HEATMAP STYLES
+   ======================================== */
+
+:root {
+  /* Heatmap colors */
+  --heatmap-empty: #2a2a2a; 
+  --heatmap-neutral: #1a1a1a;
+  
+  /* Profit colors (green) - BRIGHTER */
+  --heatmap-profit-min: rgba(16, 185, 129, 0.3); /* ✅ 0.2 → 0.3 */
+  --heatmap-profit-low: rgba(16, 185, 129, 0.5); /* ✅ 0.4 → 0.5 */
+  --heatmap-profit-med: rgba(16, 185, 129, 0.8); /* ✅ 0.7 → 0.8 */
+  --heatmap-profit-high: #10b981;
+  
+  /* Loss colors (red) - BRIGHTER */
+  --heatmap-loss-min: rgba(239, 68, 68, 0.3); /* ✅ 0.2 → 0.3 */
+  --heatmap-loss-low: rgba(239, 68, 68, 0.5); /* ✅ 0.4 → 0.5 */
+  --heatmap-loss-med: rgba(239, 68, 68, 0.8); /* ✅ 0.7 → 0.8 */
+  --heatmap-loss-high: #ef4444;
+}
+
+.calendar-heatmap-container {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 24px; /* ✅ More space */
+  margin-bottom: 20px;
+}
+
+.heatmap-wrapper {
+  position: relative;
+  overflow-x: auto;
+  padding: 16px; /* ✅ NEW: Inner padding */
+  background: rgba(0, 0, 0, 0.3); /* ✅ NEW: Darker inner background */
+  border-radius: 8px;
+  margin-top: 10px;
+}
+
+.calendar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.calendar-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.year-selector {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.year-nav-btn {
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.year-nav-btn:hover:not(:disabled) {
+  background: var(--accent-green);
+  border-color: var(--accent-green);
+}
+
+.year-nav-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.year-display {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+  min-width: 50px;
+  text-align: center;
+}
+
+.heatmap-wrapper {
+  position: relative;
+  overflow-x: auto;
+  padding: 10px 0;
+}
+
+.month-labels {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 8px;
+  margin-left: 30px;
+}
+
+.month-label {
+  font-size: 10px;
+  color: var(--text-secondary);
+  min-width: 24px;
+  text-align: center;
+}
+
+.day-labels {
+  position: absolute;
+  left: 0;
+  top: 38px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 10px;
+  color: var(--text-secondary);
+}
+
+.day-labels span {
+  height: 10px;
+  line-height: 10px;
+}
+
+.day-labels span:nth-child(2) {
+  margin-top: 10px;
+}
+
+.day-labels span:nth-child(3) {
+  margin-top: 10px;
+}
+
+.heatmap-grid {
+  display: flex;
+  gap: 4px;
+  margin-left: 30px;
+}
+
+.heatmap-week {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.heatmap-day {
+  width: 11px; /* ✅ Slightly bigger */
+  height: 11px;
+  border-radius: 2px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid rgba(255, 255, 255, 0.05); /* ✅ Subtle border */
+}
+
+.heatmap-day:hover {
+  transform: scale(1.5);
+  border-color: var(--text-primary);
+  z-index: 10;
+}
+
+.heatmap-day.out-of-year {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.heatmap-tooltip {
+  position: fixed;
+  background: var(--bg-body);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 12px;
+  pointer-events: none;
+  z-index: 1000;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+  transform: translate(-50%, -120%);
+  white-space: nowrap;
+}
+
+.tooltip-date {
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.tooltip-pnl {
+  font-family: 'Courier New', monospace;
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
+.tooltip-pnl.profit {
+  color: var(--success);
+}
+
+.tooltip-pnl.loss {
+  color: var(--danger);
+}
+
+.tooltip-stats {
+  color: var(--text-secondary);
+  font-size: 11px;
+}
+
+.tooltip-empty {
+  color: var(--text-secondary);
+}
+
+.heatmap-legend {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 16px;
+  justify-content: center;
+}
+
+.legend-label {
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.legend-squares {
+  display: flex;
+  gap: 3px;
+}
+
+.legend-square {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+}
+
+.heatmap-summary {
+  text-align: center;
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+/* ========================================
+   STATS TABS STYLES
+   ======================================== */
+
+.stats-tabs-container {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+.tabs-header {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.tab-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 14px;
+  padding: 12px 20px;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s ease;
+  font-weight: 500;
+}
+
+.tab-btn:hover {
+  color: var(--text-primary);
+}
+
+.tab-btn.active {
+  color: var(--accent-green);
+  border-bottom-color: var(--accent-green);
+}
+
+.stats-tab-content {
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.stats-period-header {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 16px;
+  text-align: center;
+}
+
+.stats-scroll-container {
+  max-height: 400px;
+  overflow-y: auto;
+  margin-bottom: 16px;
+}
+
+.stats-scroll-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.stats-scroll-container::-webkit-scrollbar-track {
+  background: var(--bg-input);
+  border-radius: 3px;
+}
+
+.stats-scroll-container::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 3px;
+}
+
+.stats-scroll-container::-webkit-scrollbar-thumb:hover {
+  background: var(--accent-green);
+}
+
+.stats-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.stats-table thead th {
+  text-align: left;
+  padding: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  font-size: 11px;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid var(--border);
+}
+
+.stats-table tbody tr {
+  border-bottom: 1px solid var(--border);
+  transition: background 0.2s ease;
+}
+
+.stats-table tbody tr:hover:not(.no-trades) {
+  background: var(--bg-input);
+}
+
+.stats-table tbody tr.no-trades {
+  opacity: 0.4;
+}
+
+.stats-table td {
+  padding: 12px;
+}
+
+.day-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.day-name {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.day-date {
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.date-cell,
+.month-cell {
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.pnl-cell {
+  font-family: 'Courier New', monospace;
+  font-weight: 600;
+}
+
+.pnl-cell.profit {
+  color: var(--success);
+}
+
+.pnl-cell.loss {
+  color: var(--danger);
+}
+
+.count-cell {
+  color: var(--text-secondary);
+}
+
+.winrate-cell {
+  color: var(--text-secondary);
+  font-family: 'Courier New', monospace;
+}
+
+.stats-summary {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  background: var(--bg-input);
+  border-radius: 8px;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.stats-summary span:first-child {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+/* ========================================
+   RESPONSIVE - CALENDAR & STATS
+   ======================================== */
+
+@media (max-width: 768px) {
+  .calendar-heatmap-container,
+  .stats-tabs-container {
+    padding: 16px;
+  }
+
+  .heatmap-wrapper {
+    overflow-x: scroll;
+  }
+
+  .stats-table {
+    font-size: 12px;
+  }
+
+  .stats-table td,
+  .stats-table th {
+    padding: 8px;
+  }
+
+  .tab-btn {
+    padding: 10px 16px;
+    font-size: 13px;
+  }
+
+  .stats-summary {
+    flex-wrap: wrap;
+    font-size: 12px;
+  }
 }

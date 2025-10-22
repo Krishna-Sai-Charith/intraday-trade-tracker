@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useAuth } from '../context/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import '../index.css';
 
 const loginSchema = z.object({
@@ -15,6 +15,7 @@ export default function Login() {
   const { login } = useAuth();
   const navigate = useNavigate();
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const {
     register,
@@ -25,6 +26,9 @@ export default function Login() {
   });
 
   const onSubmit = async (data) => {
+    setLoading(true);
+    setError('');
+    
     try {
       const res = await fetch('http://localhost:5000/auth/login', {
         method: 'POST',
@@ -42,6 +46,8 @@ export default function Login() {
       }
     } catch (err) {
       setError('Network error');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -49,6 +55,7 @@ export default function Login() {
     <div className="auth-container">
       <div className="auth-card">
         <h2>Login</h2>
+        
         {error && <div className="alert alert-error">{error}</div>}
         
         <form onSubmit={handleSubmit(onSubmit)} className="form">
@@ -57,7 +64,8 @@ export default function Login() {
             <input
               {...register('email')}
               type="email"
-              placeholder="Email"
+              placeholder="your@email.com"
+              disabled={loading}
             />
             {errors.email && (
               <p className="text-red-500 text-sm" style={{ marginTop: '6px' }}>
@@ -71,7 +79,8 @@ export default function Login() {
             <input
               {...register('password')}
               type="password"
-              placeholder="Password"
+              placeholder="••••••••"
+              disabled={loading}
             />
             {errors.password && (
               <p className="text-red-500 text-sm" style={{ marginTop: '6px' }}>
@@ -80,16 +89,27 @@ export default function Login() {
             )}
           </div>
 
-          <button type="submit" className="btn">
-            Login
+          <button type="submit" className="btn" disabled={loading}>
+            {loading ? 'Logging in...' : 'Login'}
           </button>
+
+          {/* 🔐 Forgot Password Link */}
+          <div style={{ textAlign: 'right', marginTop: '12px' }}>
+            <Link 
+              to="/forgot-password" 
+              className="link" 
+              style={{ fontSize: '13px' }}
+            >
+              Forgot Password?
+            </Link>
+          </div>
         </form>
 
         <p className="link-text">
           Don't have an account?{' '}
-          <span onClick={() => navigate('/register')} className="link">
-            Register
-          </span>
+          <Link to="/register" className="link">
+            Register here
+          </Link>
         </p>
       </div>
     </div>
