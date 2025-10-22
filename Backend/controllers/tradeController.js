@@ -96,3 +96,137 @@ export const deleteTrade = async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 };
+
+export const getCalendarStats = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const { year } = req.query;
+    
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    const targetYear = year ? parseInt(year) : new Date().getFullYear();
+    
+    // Filter trades by year - FIXED: use trade.date instead of trade.createdAt
+    const yearTrades = user.trades.filter(trade => {
+      const tradeDate = new Date(trade.date); // ✅ CHANGED
+      return tradeDate.getFullYear() === targetYear;
+    });
+
+    // Helper: Calculate stats for a group of trades
+    const calculateStats = (trades) => {
+      if (trades.length === 0) {
+        return { pnl: 0, count: 0, wins: 0, losses: 0, winRate: 0 };
+      }
+      
+      const pnl = trades.reduce((sum, t) => sum + t.profitLoss, 0);
+      const wins = trades.filter(t => t.profitLoss > 0).length;
+      const losses = trades.filter(t => t.profitLoss < 0).length;
+      const winRate = trades.length > 0 ? ((wins / trades.length) * 100).toFixed(1) : 0;
+      
+      return { pnl, count: trades.length, wins, losses, winRate: parseFloat(winRate) };
+    };
+
+    // DAILY STATS (for heatmap)
+    const dailyStatsMap = new Map();
+    
+    yearTrades.forEach(trade => {
+      const dateKey = new Date(trade.date).toISOString().split('T')[0]; // ✅ CHANGED
+      
+      if (!dailyStatsMap.has(dateKey)) {
+        dailyStatsMap.set(dateKey, []);
+      }
+      dailyStatsMap.get(dateKey).push(trade);
+    });
+
+    const dailyStats = Array.from(dailyStatsMap.entries()).map(([date, trades]) => ({
+      date,
+      ...calculateStats(trades)
+    }));
+
+    // WEEKLY STATS (current week) - Mon to Fri only
+    const now = new Date();
+    const startOfWeek = new Date(now);
+    const dayOfWeek = now.getDay();
+    const daysToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek; // ✅ NEW: Start from Monday
+    startOfWeek.setDate(now.getDate() + daysToMonday);
+    startOfWeek.setHours(0, 0, 0, 0);
+    
+    const weeklyStats = [];
+    const tradingDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri']; // ✅ NEW: Only 5 days
+    
+    for (let i = 0; i < 5; i++) { // ✅ CHANGED: 7 to 5
+      const day = new Date(startOfWeek);
+      day.setDate(startOfWeek.getDate() + i);
+      const dateKey = day.toISOString().split('T')[0];
+      
+      const dayTrades = yearTrades.filter(trade => {
+        const tradeDate = new Date(trade.date).toISOString().split('T')[0]; // ✅ CHANGED
+        return tradeDate === dateKey;
+      });
+
+      weeklyStats.push({
+        date: dateKey,
+        dayName: tradingDays[i], // ✅ CHANGED
+        ...calculateStats(dayTrades)
+      });
+    }
+
+    // MONTHLY STATS (current month)
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    const daysInMonth = endOfMonth.getDate();
+
+    const monthlyStats = [];
+    for (let day = 1; day <= daysInMonth; day++) {
+      const date = new Date(now.getFullYear(), now.getMonth(), day);
+      const dateKey = date.toISOString().split('T')[0];
+      
+      const dayTrades = yearTrades.filter(trade => {
+        const tradeDate = new Date(trade.date).toISOString().split('T')[0]; // ✅ CHANGED
+        return tradeDate === dateKey;
+      });
+
+      monthlyStats.push({
+        date: dateKey,
+        day,
+        ...calculateStats(dayTrades)
+      });
+    }
+
+    // YEARLY STATS (all 12 months)
+    const yearlyStats = [];
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    
+    for (let month = 0; month < 12; month++) {
+      const monthTrades = yearTrades.filter(trade => {
+        const tradeDate = new Date(trade.date); // ✅ CHANGED
+        return tradeDate.getMonth() === month;
+      });
+
+      yearlyStats.push({
+        month: month + 1,
+        monthName: monthNames[month],
+        ...calculateStats(monthTrades)
+      });
+    }
+
+    // OVERALL YEAR SUMMARY
+    const yearSummary = calculateStats(yearTrades);
+
+    res.json({
+      year: targetYear,
+      summary: yearSummary,
+      dailyStats,
+      weeklyStats,
+      monthlyStats,
+      yearlyStats
+    });
+
+  } catch (error) {
+    console.error('Calendar stats error:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};

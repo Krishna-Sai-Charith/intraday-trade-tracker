@@ -1,11 +1,20 @@
-// backend/routes/tradeRoutes.js
+// UPDATE YOUR EXISTING tradeRoutes.js
+
 import express from 'express';
-import { createTrade, deleteTrade } from '../controllers/tradeController.js'; // ✅ both must be imported
 import { verifyToken } from '../middleware/auth.js';
+import { 
+  createTrade, 
+  deleteTrade, 
+  getCalendarStats  // ADD THIS IMPORT
+} from '../controllers/tradeController.js';
 
 const router = express.Router();
 
+// Existing routes
 router.post('/', verifyToken, createTrade);
-router.delete('/:id', verifyToken, deleteTrade); // ✅ now deleteTrade is defined
+router.delete('/:id', verifyToken, deleteTrade);
+
+// NEW ROUTE - Calendar stats
+router.get('/calendar-stats', verifyToken, getCalendarStats);
 
 export default router;

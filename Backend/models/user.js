@@ -34,7 +34,10 @@ const userSchema = new Schema({
   password: { type: String, required: true },
   trades: [tradeSchema],
   capital: { type: Number, default: 0 },
-  favouriteStocks: [{ type: String }]
+  favouriteStocks: [{ type: String }],
+  // 🔐 Forgot Password Fields
+  resetPasswordToken: { type: String },
+  resetPasswordExpires: { type: Date }
 }, {
   timestamps: true
 });

@@ -4,6 +4,8 @@ import Navbar from '../components/Navbar';
 import FastTradeModal from '../components/FastTradeModal';
 import CapitalModal from '../components/CapitalModal';
 import TradeDetailModal from '../components/TradeDetailModal';
+import CalendarHeatmap from '../components/CalendarHeatmap';
+import StatsTabs from '../components/StatsTabs';
 import '../index.css';
 
 export default function CompleteDashboard() {
@@ -17,6 +19,16 @@ export default function CompleteDashboard() {
   const [totalPnL, setTotalPnL] = useState(0);
   const [trades, setTrades] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  // Calendar and Stats state
+  const [calendarData, setCalendarData] = useState({
+    dailyStats: [],
+    weeklyStats: [],
+    monthlyStats: [],
+    yearlyStats: [],
+    yearSummary: { pnl: 0, count: 0, winRate: 0 }
+  });
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
 
   // Gamification stats
   const [stats, setStats] = useState({
@@ -54,8 +66,32 @@ export default function CompleteDashboard() {
     }
   };
 
+  const fetchCalendarStats = async (year) => {
+    if (!currentUser?.token) return;
+
+    try {
+      const res = await fetch(`${API_BASE}/api/trades/calendar-stats?year=${year}`, {
+        headers: { 'Authorization': `Bearer ${currentUser.token}` }
+      });
+      
+      if (res.ok) {
+        const data = await res.json();
+        setCalendarData({
+          dailyStats: data.dailyStats || [],
+          weeklyStats: data.weeklyStats || [],
+          monthlyStats: data.monthlyStats || [],
+          yearlyStats: data.yearlyStats || [],
+          yearSummary: data.summary || { pnl: 0, count: 0, winRate: 0 }
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching calendar stats:', error);
+    }
+  };
+
   useEffect(() => {
     fetchUserData();
+    fetchCalendarStats(selectedYear);
   }, [currentUser]);
 
   const calculateStats = (tradesData) => {
@@ -84,16 +120,27 @@ export default function CompleteDashboard() {
     });
   };
 
-  const handleTradeSaved = (trade) => {
-    if (!trade) return;
-    const newTrades = [...trades, trade];
-    setTrades(newTrades);
-    setTotalPnL(newTrades.reduce((sum, t) => sum + (t.profitLoss || 0), 0));
-    calculateStats(newTrades);
+ const handleTradeSaved = async (trade) => {
+  if (!trade) return;
+  const newTrades = [...trades, trade];
+  setTrades(newTrades);
+  const newTotalPnL = newTrades.reduce((sum, t) => sum + (t.profitLoss || 0), 0);
+  setTotalPnL(newTotalPnL);
+  calculateStats(newTrades);
+  fetchCalendarStats(selectedYear);
+  
+  // ✅ NEW: Auto-reduce capital if loss
+  if (trade.profitLoss < 0) {
+    const newCapital = capital + trade.profitLoss; // Subtract loss
+    await handleCapitalUpdate(newCapital);
+    setToast({ show: true, message: '✅ Trade saved! Capital adjusted for loss.', success: true });
+  } else {
     setToast({ show: true, message: '✅ Trade saved successfully!', success: true });
-    setShowTradeModal(false);
-    setTimeout(() => setToast({ show: false, message: '', success: true }), 3000);
-  };
+  }
+  
+  setShowTradeModal(false);
+  setTimeout(() => setToast({ show: false, message: '', success: true }), 3000);
+};
 
   const handleDeleteTrade = async (tradeId) => {
     if (!currentUser?.token) return;
@@ -109,6 +156,7 @@ export default function CompleteDashboard() {
         setTrades(updatedTrades);
         setTotalPnL(updatedTrades.reduce((sum, t) => sum + (t.profitLoss || 0), 0));
         calculateStats(updatedTrades);
+        fetchCalendarStats(selectedYear);
         setToast({ show: true, message: '🗑️ Trade deleted successfully!', success: true });
       } else {
         setToast({ show: true, message: '❌ Failed to delete trade', success: false });
@@ -146,6 +194,35 @@ export default function CompleteDashboard() {
     setShowCapitalModal(false);
     setTimeout(() => setToast({ show: false, message: '', success: true }), 3000);
   };
+
+  const handleYearChange = (newYear) => {
+    setSelectedYear(newYear);
+    fetchCalendarStats(newYear);
+  };
+
+  const handleDayClick = (date) => {
+    console.log('Clicked day:', date);
+    // Future: Filter trades table to show only trades from this day
+  };
+
+  const handleCapitalUpdate = async (newCapital) => {
+  try {
+    const res = await fetch(`${API_BASE}/api/user/profile`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${currentUser.token}`
+      },
+      body: JSON.stringify({ capital: newCapital })
+    });
+
+    if (res.ok) {
+      setCapital(newCapital);
+    }
+  } catch (err) {
+    console.error('Capital update error:', err);
+  }
+};
 
   if (loading) {
     return (
@@ -290,7 +367,7 @@ export default function CompleteDashboard() {
               ₹{capital.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </div>
             <div className={`pnl-display-compact ${totalPnL >= 0 ? 'positive' : 'negative'}`}>
-              {totalPnL >= 0 ? '+' : ''}₹{Math.abs(totalPnL).toFixed(2)}
+              {totalPnL >= 0 ? '+' : '-'}₹{Math.abs(totalPnL).toFixed(2)}
             </div>
           </div>
 
@@ -337,19 +414,21 @@ export default function CompleteDashboard() {
         </div>
       </div>
 
-      {/* Placeholder for Future Sections */}
-      <div className="future-sections-placeholder">
-        <div style={{ 
-          padding: '24px', 
-          border: '1px dashed #2a2a2a', 
-          borderRadius: '12px',
-          textAlign: 'center',
-          color: '#4b5563',
-          fontSize: '13px'
-        }}>
-          📓 Journal & Strategy • 🏆 Badge Hall • 📅 Calendar Heatmap (Coming Soon)
-        </div>
-      </div>
+      {/* Calendar Heatmap */}
+      <CalendarHeatmap 
+        dailyStats={calendarData.dailyStats}
+        year={selectedYear}
+        onYearChange={handleYearChange}
+        onDayClick={handleDayClick}
+      />
+
+      {/* Stats Tabs */}
+      <StatsTabs 
+        weeklyStats={calendarData.weeklyStats}
+        monthlyStats={calendarData.monthlyStats}
+        yearlyStats={calendarData.yearlyStats}
+        yearSummary={calendarData.yearSummary}
+      />
 
       {/* Modals */}
       {showTradeModal && (
